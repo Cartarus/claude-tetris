@@ -1,0 +1,65 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+concurrency:
+  group: issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    # edited: solo si cambió título o cuerpo (ignora cambios de labels/assignees)
+    if: |
+      github.event.issue.user.type != 'Bot' &&
+      (github.event.action == 'opened' ||
+       github.event.changes.body != null ||
+       github.event.changes.title != null)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE: #${{ github.event.issue.number }}
+            EVENTO: ${{ github.event.action }}
+
+            Eres el triager del repo (Tetris en HTML/CSS/JS, ver CLAUDE.md).
+            1. Lee el issue: gh issue view ${{ github.event.issue.number }} --comments
+            2. Lista labels existentes: gh label list. Usa SOLO labels existentes, no crees nuevos.
+            3. Analiza el código (index.html, style.css, game.js) para ubicar el problema.
+            4. Aplica labels: gh issue edit ${{ github.event.issue.number }} --add-label "..."
+               Si EVENTO=edited, quita con --remove-label los labels que ya no apliquen.
+            5. Publica o actualiza el diagnóstico:
+               gh issue comment ${{ github.event.issue.number }} --edit-last --create-if-none --body "<diagnóstico>"
+               Así una edición del issue actualiza el mismo comentario y no lo duplica.
+
+            Formato del diagnóstico (en español, markdown):
+            ## 🤖 Diagnóstico automático
+            **Tipo:** ... | **Labels:** ... | **Prioridad estimada:** alta/media/baja
+            ### Resumen
+            ### Área afectada (archivo:línea, funciones)
+            ### Causa probable
+            ### Propuesta de solución (pasos concretos)
+            ### Riesgos / invariantes a respetar (ver CLAUDE.md)
+            ### Preguntas abiertas (si falta información)
+
+            No modifiques código, no abras PRs.
+          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
+          # or https://code.claude.com/docs/en/cli-reference for available options
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*)"
