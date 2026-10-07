@@ -32,7 +32,3 @@ Three files, no modules, no globals beyond the script scope:
 - `index.html` canvas `width`/`height` must equal `COLS*BLOCK` × `ROWS*BLOCK`. Changing the constants in `game.js` alone breaks the layout.
 - `drawNext()` assumes a 4×4 preview grid (`offX`/`offY` centering) and uses its own block size `NB = 30`.
 - `drawBlock()` draws with `globalAlpha`. The ghost piece relies on alpha 0.2 and always resets alpha to 1 afterward.
-
-### Known issue
-
-`endGame()` is called from inside `loop()` (via `lockPiece` → `spawn`). It cancels `animId`, but `loop()` then runs `requestAnimationFrame(loop)` again. The loop keeps running after game over, so drop-timer locks continue and `clearLines()` can still change score and lines behind the overlay. Fix by returning early from `loop()` when `gameOver` is set.
