@@ -19,7 +19,7 @@ Three files, no modules, no globals beyond the script scope:
 
 ### `game.js` state and flow
 
-- Config constants at the top (`COLS`, `ROWS`, `BLOCK`, `COLORS`, `PIECES`, `LINE_SCORES`). Piece shapes are square matrices whose non-zero cells hold a color index (1–8) that also indexes `COLORS`.
+- Config constants at the top (`COLS`, `ROWS`, `BLOCK`, `COLORS`, `PIECES`, `LINE_SCORES`). Piece shapes are square matrices whose non-zero cells hold a color index (1–9) that also indexes `COLORS`.
 - Mutable state is module-level `let`s: `board`, `current`, `next`, `score`, `lines`, `level`, `paused`, `gameOver`, `dropAccum`, `dropInterval`, `animId`.
 - Main loop: `loop(ts)` is driven by `requestAnimationFrame`. It accumulates `dt` into `dropAccum`; when it reaches `dropInterval` it either moves the piece down or calls `lockPiece()`. It then calls `draw()` and reschedules itself. Rendering is a full redraw of grid, locked board, ghost, and current piece on every frame.
 - Locking: `lockPiece()` = `merge()` → `clearLines()` → `spawn()`. `spawn()` promotes `next` to `current`, generates a new `next`, and calls `endGame()` if the new piece collides immediately.
