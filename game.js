@@ -39,7 +39,9 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const themeBtn = document.getElementById('theme-toggle');
 
+let gridColor, ghostAlpha;
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
 function createBoard() {
@@ -169,7 +171,7 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
 }
 
 function drawGrid() {
-  ctx.strokeStyle = '#22222e';
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -199,7 +201,7 @@ function draw() {
   for (let r = 0; r < current.shape.length; r++)
     for (let c = 0; c < current.shape[r].length; c++)
       if (current.shape[r][c])
-        drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, 0.2);
+        drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, ghostAlpha);
 
   // current piece
   for (let r = 0; r < current.shape.length; r++)
@@ -300,5 +302,23 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const light = theme === 'light';
+  gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
+  ghostAlpha = light ? 0.35 : 0.2;
+  themeBtn.textContent = light ? '☾ Modo oscuro' : '☀ Modo claro';
+  themeBtn.setAttribute('aria-pressed', String(light));
+  // la pausa detiene el loop, así que se redibuja a mano
+  if (current) { draw(); drawNext(); }
+}
+
+themeBtn.addEventListener('click', () => {
+  applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  themeBtn.blur(); // evita que Espacio/flechas activen el botón durante la partida
+});
+
+applyTheme('dark');
 
 init();
